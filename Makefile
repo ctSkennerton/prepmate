@@ -1,13 +1,8 @@
 CXX=g++
-LIBS=
-CXXFLAGS=-Wall -O2
+LIBS=-lz
+CXXFLAGS=-Wall -O2 -DSEQAN_HAS_ZLIB
 EXECUTABLE=prepmate
 SEQAN=third_party/seqan-1.4.1/include
-
-ifdef ZLIB
-	override CXXFLAGS := $(CXXFLAGS) -DSEQAN_HAS_ZLIB
-	override LIBS := $(LIBS) -lz
-endif
 
 ifdef BZIP2
 	override CXXFLAGS := $(CXXFLAGS) -DSEQAN_HAS_BZIP2
