@@ -37,6 +37,16 @@ typedef struct ALI_POS {
     processDecision_t decision;
 } alignmentResult_t;
 
+typedef struct STATS {
+    float totalPairs;
+    float pairsWithAdaptors;
+    float pairsWithoutAdaptors;
+    float singletons;
+    float pairsMP;
+    float pairsPE;
+    float pairsRemoved;
+} stats_t;
+
 struct Fx
 {
     seqan::CharString id;
@@ -166,23 +176,31 @@ void output_alignments(Fx& mate1,
         gzFile pairedEndOutFile1,
         gzFile pairedEndOutFile2,
         gzFile singletonsOutFile,
-        FILE* logFile){
+        FILE* logFile,
+        stats_t& stats){
 
+    stats.totalPairs++;
     switch(m1a.decision) {
         case MP: {
             switch(m2a.decision) {
                 case PE:
                     fprintf(logFile, "%s\n", "mate1 is mate-pair, mate2 is paired-end. PE trumps MP");
                     printPair(mate1, mate2, pairedEndOutFile1, pairedEndOutFile2);
+                    stats.pairsWithAdaptors++;
+                    stats.pairsPE++;
                     break;
                 case R:
                     fprintf(logFile, "%s\n", "mate1 to singletons");
                     printSingle(mate1, singletonsOutFile);
+                    stats.pairsWithAdaptors++;
+                    stats.singletons++;
                     break;
                 case MP:
                 default:
                     fprintf(logFile, "%s\n", "mate-pair");
                     printPair(mate1, mate2, matePairOutFile1, matePairOutFile2);
+                    stats.pairsWithAdaptors++;
+                    stats.pairsMP++;
                     break;
             }
             break;
@@ -192,18 +210,26 @@ void output_alignments(Fx& mate1,
                 case PE:
                     fprintf(logFile, "%s\n", "paired-end");
                     printPair(mate1, mate2, pairedEndOutFile1, pairedEndOutFile2);
+                    stats.pairsWithAdaptors++;
+                    stats.pairsPE++;
                     break;
                 case R:
                     fprintf(logFile, "%s\n", "mate1 to singletons");
                     printSingle(mate1, singletonsOutFile);
+                    stats.pairsWithAdaptors++;
+                    stats.singletons++;
                     break;
                 case MP:
                     fprintf(logFile, "%s\n", "mate1 is paired-end, mate2 is mate-pair. PE trumps MP");
                     printPair(mate1, mate2, pairedEndOutFile1, pairedEndOutFile2);
+                    stats.pairsWithAdaptors++;
+                    stats.pairsPE++;
                     break;
                 default:
                     fprintf(logFile, "%s\n", "paired-end");
                     printPair(mate1, mate2, pairedEndOutFile1, pairedEndOutFile2);
+                    stats.pairsWithAdaptors++;
+                    stats.pairsPE++;
                     break;
             }
             break;
@@ -213,17 +239,25 @@ void output_alignments(Fx& mate1,
                 case PE:
                     fprintf(logFile, "%s\n", "mate2 to singletons");
                     printSingle(mate2, singletonsOutFile);
+                    stats.pairsWithAdaptors++;
+                    stats.singletons++;
                     break;
                 case R:
                     fprintf(logFile, "%s\n", "both removed");
+                    stats.pairsWithAdaptors++;
+                    stats.pairsRemoved++;
                     break;
                 case MP:
                     fprintf(logFile, "%s\n", "mate2 to singletons");
                     printSingle(mate2, singletonsOutFile);
+                    stats.pairsWithAdaptors++;
+                    stats.singletons++;
                     break;
                 default:
                     fprintf(logFile, "%s\n", "mate2 to singletons");
                     printSingle(mate2, singletonsOutFile);
+                    stats.pairsWithAdaptors++;
+                    stats.singletons++;
                     break;
             }
             break;
@@ -233,18 +267,26 @@ void output_alignments(Fx& mate1,
                 case PE:
                     fprintf(logFile, "%s\n", "paired-end");
                     printPair(mate1, mate2, pairedEndOutFile1, pairedEndOutFile2);
+                    stats.pairsWithAdaptors++;
+                    stats.pairsPE++;
                     break;
                 case R:
                     fprintf(logFile, "%s\n", "mate1 to singletons");
                     printSingle(mate1, singletonsOutFile);
+                    stats.pairsWithAdaptors++;
+                    stats.singletons++;
                     break;
                 case MP:
                     fprintf(logFile, "%s\n", "mate-pair");
                     printPair(mate1, mate2, matePairOutFile1, matePairOutFile2);
+                    stats.pairsWithAdaptors++;
+                    stats.pairsMP++;
                     break;
                 default:
                     fprintf(logFile, "%s\n", "mate-pair");
                     printPair(mate1, mate2, matePairOutFile1, matePairOutFile2);
+                    stats.pairsWithoutAdaptors++;
+                    stats.pairsMP++;
                     break;
             }
             break;
@@ -288,7 +330,8 @@ void align_pair(Fx& mate1,
         gzFile pairedEndOutFile1,
         gzFile pairedEndOutFile2,
         gzFile singletonsOutFile,
-        FILE* logFile) {
+        FILE* logFile,
+        stats_t& stats ) {
 
     
     alignmentResult_t mate1_alignment;
@@ -354,7 +397,8 @@ void align_pair(Fx& mate1,
         pairedEndOutFile1,
         pairedEndOutFile2,
         singletonsOutFile,
-        logFile);
+        logFile,
+        stats);
 }
 
 int main(int argc, char * argv[])
@@ -408,7 +452,16 @@ int main(int argc, char * argv[])
         "mate1", "score1", "adaptor_begin1", "adaptor_end1", "read_begin1", "read_end1", "type1",
         "mate2", "score2", "adaptor_begin2", "adaptor_end2", "read_begin2", "read_end2", "type2", "output");
     
-    int counter1 = 0;
+    stats_t total_stats;
+    total_stats.totalPairs = 0;
+    total_stats.pairsWithAdaptors = 0;
+    total_stats.pairsWithoutAdaptors = 0;
+    total_stats.singletons = 0;
+    total_stats.pairsMP = 0;
+    total_stats.pairsPE = 0;
+    total_stats.pairsRemoved = 0;
+
+
     while (!atEnd(read1))
     {
         if (atEnd(read2)) {
@@ -418,16 +471,13 @@ int main(int argc, char * argv[])
 
         
         if (readRecord(mate1.id, mate1.seq, mate1.qual, read1) != 0) {
-            fprintf(stderr, "%s: read %d\n", "Malformed record in file 1", counter1);
+            fprintf(stderr, "%s: read %.0f\n", "Malformed record in file 1", total_stats.totalPairs);
         }
 
         if (readRecord(mate2.id, mate2.seq, mate2.qual, read2) != 0) {
-            fprintf(stderr, "%s: read %d\n", "Malformed record in file 2", counter1);
+            fprintf(stderr, "%s: read %.0f\n", "Malformed record in file 2", total_stats.totalPairs);
         }
-        counter1++;
-        if((counter1 % 1000) == 0) {
-            printf("%d\n", counter1);
-        }
+
         align_pair(mate1, 
             mate2, 
             ali, 
@@ -438,7 +488,8 @@ int main(int argc, char * argv[])
             pairedEndOutFile1,
             pairedEndOutFile2,
             singletonsOutFile,
-            log_file_fp);
+            log_file_fp,
+            total_stats);
  
     }
     gzclose(matePairOutFile1);
@@ -447,6 +498,24 @@ int main(int argc, char * argv[])
     gzclose(pairedEndOutFile2);
     gzclose(singletonsOutFile);
     fclose(log_file_fp);
+
+    float with_adaptors_perc = (total_stats.pairsWithAdaptors / total_stats.totalPairs) * 100;
+    float without_adaptors_perc = (total_stats.pairsWithoutAdaptors / total_stats.totalPairs) * 100;
+    float singleton_perc = (total_stats.singletons / total_stats.totalPairs) * 100;
+    float mp_with_adaptor_perc = ((total_stats.pairsWithAdaptors - total_stats.pairsPE) / total_stats.totalPairs) * 100;
+    float pe_perc = (total_stats.pairsPE / total_stats.totalPairs) * 100;
+    float mp_perc = (total_stats.pairsMP / total_stats.totalPairs) * 100;
+    float rem_perc = (total_stats.pairsRemoved / total_stats.totalPairs) * 100;
+    
+    printf("Total Pairs:                         %.0f\n", total_stats.totalPairs);
+    printf("Pairs without adaptors (assumed MP): %.0f (%.2f%%)\n", total_stats.pairsWithoutAdaptors, without_adaptors_perc);
+    printf("Pairs with adaptors:                 %.0f (%.2f%%)\n", total_stats.pairsWithAdaptors, with_adaptors_perc);
+    printf("  ...assigned to MP:                 %.0f (%.2f%%)\n", (total_stats.pairsWithAdaptors - total_stats.pairsPE), mp_with_adaptor_perc);
+    printf("  ...assigned to PE:                 %.0f (%.2f%%)\n", total_stats.pairsPE, pe_perc);
+    printf("Overall MP:                          %.0f (%.2f%%)\n", total_stats.pairsMP, mp_perc);
+    printf("Total Singletons:                    %.0f (%.2f%%)\n", total_stats.singletons, singleton_perc);
+    printf("Pairs Removed completely:            %.0f (%.2f%%)\n", total_stats.pairsRemoved, rem_perc);
+    
     return 0;
 }
 
