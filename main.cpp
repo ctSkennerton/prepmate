@@ -59,7 +59,7 @@ struct Options
     int bandLength;
     int minScore;
     Options() :
-    minLength(50), outPrefix("prepmate"), adaptor("CTGTCTCTTATACACATCTAGATGTGTATAAGAGACAG"), bandLength(9), minScore(9)
+    minLength(50), outPrefix("prepmate"), adaptor("CTGTCTCTTATACACATCTAGATGTGTATAAGAGACAG"), bandLength(9), minScore(15)
     {}
 
 };
@@ -172,7 +172,8 @@ void output_alignments(Fx& mate1,
         case MP: {
             switch(m2a.decision) {
                 case PE:
-                    fprintf(logFile, "%s\n", "type mismatch: mate1 is mate-pair, mate2 is paired-end");
+                    fprintf(logFile, "%s\n", "mate1 is mate-pair, mate2 is paired-end. PE trumps MP");
+                    printPair(mate1, mate2, pairedEndOutFile1, pairedEndOutFile2);
                     break;
                 case R:
                     fprintf(logFile, "%s\n", "mate1 to singletons");
@@ -197,7 +198,8 @@ void output_alignments(Fx& mate1,
                     printSingle(mate1, singletonsOutFile);
                     break;
                 case MP:
-                    fprintf(logFile, "%s\n", "type mismatch: mate1 is paired-end, mate2 is mate-pair");
+                    fprintf(logFile, "%s\n", "mate1 is paired-end, mate2 is mate-pair. PE trumps MP");
+                    printPair(mate1, mate2, pairedEndOutFile1, pairedEndOutFile2);
                     break;
                 default:
                     fprintf(logFile, "%s\n", "paired-end");
