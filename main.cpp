@@ -17,7 +17,7 @@
 #include <seqan/align.h>
 #include <zlib.h>
 
-#define VERSION "0.1"
+#define VERSION "0.2"
 using namespace seqan;
 
 typedef enum PROCESS_DECISION {
