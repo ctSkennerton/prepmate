@@ -24,5 +24,5 @@ main.o: main.cpp
 $(EXECUTABLE): main.o
 	$(CXX) $(CXXFLAGS) -I$(SEQAN) -o $(EXECUTABLE) $^ $(LIBS)
 
-test: test.cpp
-	$(CXX) $(CXXFLAGS) -I$(SEQAN) -o $@ $< $(LIBS)
+testthread: threadtest.cpp
+	$(CXX) -std=c++0x -pthread $(CXXFLAGS) -I$(SEQAN) -o $@ $< $(LIBS) -lpthread
