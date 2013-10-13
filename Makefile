@@ -1,6 +1,6 @@
 CXX=g++
-LIBS=-lz
-CXXFLAGS=-Wall -O2 -DSEQAN_HAS_ZLIB
+LIBS=-lz -lpthread
+CXXFLAGS=-Wall -O2 -DSEQAN_HAS_ZLIB -std=c++0x -pthread 
 EXECUTABLE=prepmate
 SEQAN=third_party/seqan-1.4.1/include
 
@@ -25,4 +25,4 @@ $(EXECUTABLE): main.o
 	$(CXX) $(CXXFLAGS) -I$(SEQAN) -o $(EXECUTABLE) $^ $(LIBS)
 
 testthread: threadtest.cpp
-	$(CXX) -std=c++0x -pthread $(CXXFLAGS) -I$(SEQAN) -o $@ $< $(LIBS) -lpthread
+	$(CXX) $(CXXFLAGS) -I$(SEQAN) -o $@ $< $(LIBS)
