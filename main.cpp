@@ -492,10 +492,10 @@ int main(int argc, char * argv[])
     printf("Total Pairs:                         %d\n", counter);
     printf("Pairs without adaptors (assumed MP): %.0f (%.2f%%)\n", total_stats.pairsWithoutAdaptors, without_adaptors_perc);
     printf("Pairs with adaptors:                 %.0f (%.2f%%)\n", pairs_with_adaptors, with_adaptors_perc);
-    printf("  ...assigned to MP:                 %.0f (%.2f%%)\n", total_stats.pairsAdaptorMP, total_stats.pairsAdaptorMP / (float)counter);
+    printf("  ...assigned to MP:                 %.0f (%.2f%%)\n", total_stats.pairsAdaptorMP, (total_stats.pairsAdaptorMP / (float)counter) * 100);
     printf("  ...assigned to PE:                 %.0f (%.2f%%)\n", total_stats.pairsAdaptorPE, pe_perc);
+    printf("  ...assigned Singletons:            %.0f (%.2f%%)\n", total_stats.singletons, singleton_perc);
     printf("Overall MP:                          %.0f (%.2f%%)\n", total_stats.pairsAdaptorMP + total_stats.pairsWithoutAdaptors, mp_perc);
-    printf("Total Singletons:                    %.0f (%.2f%%)\n", total_stats.singletons, singleton_perc);
     printf("Pairs Removed completely:            %.0f (%.2f%%)\n", total_stats.pairsRemoved, rem_perc);
     
     return 0;
