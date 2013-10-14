@@ -76,10 +76,10 @@ struct Options
 class OutputFiles
 {
 private:
-    std::mutex outMutexMP;
-    std::mutex outMutexPE;
-    std::mutex outMutexS;
-    std::mutex outMutexL;
+    std::recursive_mutex outMutexMP;
+    std::recursive_mutex outMutexPE;
+    std::recursive_mutex outMutexS;
+    std::recursive_mutex outMutexL;
     
     gzFile matePairOutFile1;
     gzFile matePairOutFile2;
@@ -117,7 +117,7 @@ public:
     }
 
     void printMatePair(Fx& mate1, Fx& mate2){
-        std::lock_guard<std::mutex> lock(outMutexMP);
+        std::lock_guard<std::recursive_mutex> lock(outMutexMP);
         gzprintf(matePairOutFile1, "@%s\n%s\n+\n%s\n", 
                 seqan::toCString(mate1.id),
                 seqan::toCString(mate1.seq),
@@ -130,7 +130,7 @@ public:
     }
 
     void printPairEnd(Fx& mate1, Fx& mate2){
-        std::lock_guard<std::mutex> lock(outMutexPE);
+        std::lock_guard<std::recursive_mutex> lock(outMutexPE);
         gzprintf(pairedEndOutFile1, "@%s\n%s\n+\n%s\n", 
                 seqan::toCString(mate1.id),
                 seqan::toCString(mate1.seq),
@@ -143,7 +143,7 @@ public:
     }
 
     void printSingletons(Fx& read){
-        std::lock_guard<std::mutex> lock(outMutexS);
+        std::lock_guard<std::recursive_mutex> lock(outMutexS);
         gzprintf(singletonsOutFile, "@%s\n%s\n+\n%s\n", 
                 seqan::toCString(read.id),
                 seqan::toCString(read.seq),
@@ -152,7 +152,7 @@ public:
     }
 
     void printLog(const char * msg){
-        std::lock_guard<std::mutex> lock(outMutexL);
+        std::lock_guard<std::recursive_mutex> lock(outMutexL);
         fprintf(logFile, "%s", msg);
     }
 
@@ -194,7 +194,6 @@ void usage(Options& opts) {
     printf("\t-V           Print version\n");
     printf("\t-t <int>     number of threads (processors) to use. default: %d\n", opts.threads);
     printf("\t-m <int>     minimum read length after adaptor trimming. default: %d\n", opts.minLength);
-    printf("\t-b <int>     minimum length for the initial match to the adaptor. default: %d\n", opts.bandLength);
     printf("\t-s <int>     minimum score for the overall alignment. default: %d\n", opts.minScore);
     printf("\t-a <DNA>     DNA sequence of the matepair double adaptor. default: %s\n", seqan::toCString(opts.adaptor));
     printf("\t-o <text>    prefix for output files. default: %s\n", opts.outPrefix.c_str());
@@ -207,6 +206,12 @@ int parseOptions(int argc,  char * argv[], Options& opts) {
         switch (c) {
             case 't':
                 opts.threads = atoi(optarg);
+                if(opts.threads > 8) {
+                    fprintf(stderr, "NOTE: The guy that wrote this doesn't have a great grasp of threading\n");
+                    fprintf(stderr, "so actually any more than 8 threads gives you no speedup... changing\n");
+                    fprintf(stderr, "number of threads to 8 now!\n");
+                    opts.threads = 8;
+                }
                 break;
             case 'm':
                 opts.minLength = atoi(optarg);
@@ -600,6 +605,7 @@ int main(int argc, char * argv[])
                 std::unique_lock<std::mutex> lock(xmutex);
                 is_not_full.wait(lock, [] { return products.size() <= max_products; });
                 products.push(readPairs);
+                started_production = true;
             }
             seqan::clear(ids1);
             seqan::clear(ids2);
